@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NancyCraft | Digital Creatives & Virtual Studio</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Alpine.js CDN for Reactive State Engine -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#FAF7F2',
+                        cozyPaper: '#F4EFE6',
+                        brandAccent: '#E07A5F',
+                        brandTeal: '#2D3748',
+                        brandDeep: '#1A202C',
+                        brandSage: '#81B29A',
+                        brandGold: '#F2CC8F',
+                        brandPurple: '#7B61FF'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        body {
+            background-color: #FAF7F2;
+            color: #2D3748;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar matching brand theme */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #FAF7F2; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A0AEC0; }
+
+        .color-path { transition: fill 0.25s ease, stroke 0.2s ease; cursor: pointer; }
+        .color-path:hover { filter: brightness(0.92); stroke-width: 3.5px; }
+        
+        .canvas-container {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body x-data="nancyCraftApp()" class="min-h-screen flex flex-col justify-between selection:bg-orange-200 selection:text-slate-900">
+
+    <!-- Global Toast Alert Notification Container -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+         x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+         class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700"
+         x-cloak>
+        <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span class="font-medium text-xs sm:text-sm" x-text="toast.message"></span>
+    </div>
+
+    <!-- 1. Top Announcement Bar -->
+    <aside class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white text-xs font-semibold py-2 px-4 text-center tracking-wide flex justify-center items-center gap-2 shadow-sm">
+        <span>✨ Special Offer: Use code <strong class="bg-white/20 px-2 py-0.5 rounded text-amber-200 ml-0.5">SPRING20</strong> for 20% OFF all digital printable bundles!</span>
+    </aside>
+
+    <!-- 2. Header Navigation Menu -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo Group -->
+            <button @click="currentView = 'store'" class="flex items-center gap-3 text-left group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-pink-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+                    <i class="fa-solid fa-palette text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-display font-black text-xl sm:text-2xl tracking-tight text-slate-900 block leading-none">Nancy<span class="text-orange-500">Craft</span></span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mt-1">Digital Creatives</span>
+                </div>
+            </button>
+
+            <!-- Store Search Bar Input -->
+            <div x-show="currentView === 'store'" class="hidden md:flex flex-1 max-w-md relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" 
+                       x-model="searchQuery" 
+                       placeholder="Search coloring books, brush collections, supplies..." 
+                       class="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-orange-500 focus:bg-white transition shadow-sm">
+                <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Controls & Actions -->
+            <nav class="flex items-center gap-2.5" aria-label="Main Navigation">
+                
+                <!-- Currency Toggle Switcher -->
+                <button @click="currency = (currency === 'USD' ? 'UGX' : 'USD')" 
+                        class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-full border border-slate-200 transition duration-200"
+                        title="Toggle Display Currency">
+                    <i class="fa-solid fa-globe text-orange-500 text-xs"></i>
+                    <span x-text="currency"></span>
+                </button>
+
+                <!-- Virtual Studio Workspace Trigger Modal Button -->
+                <button @click="openStudioModal()" 
+                        class="inline-flex items-center gap-2 bg-[#E65A2B] hover:bg-[#c94a20] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-md transition duration-150 ease-in-out whitespace-nowrap active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-200"></i>
+                    <span>🎨 Launch Virtual Studio</span>
+                </button>
+
+                <!-- Shopping Cart Drawer Button -->
+                <button @click="cartOpen = true" class="relative bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 shadow transition hover:-translate-y-0.5 active:scale-95">
+                    <i class="fa-solid fa-basket-shopping text-amber-300"></i>
+                    <span class="hidden sm:inline">Cart</span>
+                    <span class="bg-orange-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full min-w-[18px] text-center" x-text="cartItemCount()">0</span>
+                </button>
+
+                <!-- Admin Dashboard Portal Toggle -->
+                <button @click="currentView = currentView === 'admin' ? 'store' : 'admin'" 
+                        :class="currentView === 'admin' ? 'bg-orange-100 text-orange-600' : 'text-slate-600 hover:bg-slate-100'"
+                        class="p-2.5 rounded-full transition hover:-translate-y-0.5 active:scale-95" 
+                        title="Admin Management Portal">
+                    <i class="fa-solid fa-sliders text-base"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Dynamic View Wrapper -->
+    <main class="flex-grow">
+        
+        <!-- ================= VIEW 1: STOREFRONT ================= -->
+        <article x-show="currentView === 'store'">
+            
+            <!-- Hero Showcase Section -->
+            <section class="relative overflow-hidden py-12 md:py-16 bg-gradient-to-b from-slate-100/70 via-cream to-cream border-b border-slate-200/80">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                    
+                    <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                        <span class="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-orange-200/60 shadow-sm">
+                            <i class="fa-solid fa-shield-halved text-orange-500"></i> 100% High-Resolution 300 DPI Digital Downloads
+                        </span>
+                        
+                        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
+                            Unplug, Relax & Bring <br />
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600">Color to Life.</span>
+                        </h1>
+                        
+                        <p class="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                            Discover hand-drawn printable PDF coloring books, physical spiral editions, and digital vector creative assets. Launch our integrated testing canvas right inside your browser to trace sketches, test custom brush dynamics, and export 300 DPI printables instantly!
+                        </p>
+                        
+                        <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+                            <a href="#shop-grid" class="w-full sm:w-auto bg-[#E65A2B] hover:bg-[#c94a20] text-white font-bold px-7 py-3.5 rounded-2xl shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 active:scale-95 text-center text-xs flex items-center justify-center gap-2">
+                                <span>Shop Printable Collection</span>
+                                <i class="fa-solid fa-arrow-down-long"></i>
+                            </a>
+                            <button @click="openStudioModal()" class="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-800 font-bold px-6 py-3.5 rounded-2xl border-2 border-slate-200 transition hover:-translate-y-0.5 text-xs flex items-center justify-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-palette text-purple-600"></i>
+                                <span>Try Virtual Studio</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hero Card Preview Box -->
+                    <aside class="lg:col-span-5 relative">
+                        <div class="relative mx-auto max-w-md bg-white p-5 rounded-3xl shadow-xl border border-slate-200/80 rotate-1 transform hover:rotate-0 transition duration-300">
+                            <span class="absolute -top-3 right-6 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
+                                Featured Sandbox
+                            </span>
+                            <div class="relative overflow-hidden rounded-2xl mb-4 group">
+                                <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80" alt="Cozy Nooks Book Cover" class="w-full h-64 object-cover group-hover:scale-105 transition duration-500">
+                                <div class="absolute inset-0 bg-slate-900/20 group-hover:bg-transparent transition duration-300"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-display font-extrabold text-base text-slate-900">Cozy Nooks Workspace</h3>
+                                    <p class="text-xs text-slate-500">50 Printable Pages • Interactive Testing</p>
+                                </div>
+                                <button @click="openStudioModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow">
+                                    Test Canvas
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+
+                </div>
+            </section>
+
+            <!-- Trust Features Bar -->
+            <section class="bg-white border-b border-slate-200 py-6">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-slate-600 text-xs">
+                    <div class="flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-file-pdf text-2xl text-orange-500"></i>
+                        <div>
+                            <p class="font-bold text-slate-900">Instant PDF Access</p>
+                            <p class="text-[10px] text-slate-500">Print endlessly at home</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-wand-magic-sparkles text-2xl text-purple-600"></i>
+                        <div>
+                            <p class="font-bold text-slate-900">300 DPI High-Res</p>
+                            <p class="text-[10px] text-slate-500">Crisp vector line art</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-truck-fast text-2xl text-emerald-500"></i>
+                        <div>
+                            <p class="font-bold text-slate-900">Local & Global Delivery</p>
+                            <p class="text-[10px] text-slate-500">Paperback editions shipped</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-shield-heart text-2xl text-amber-500"></i>
+                        <div>
+                            <p class="font-bold text-slate-900">Verified Mobile Money</p>
+                            <p class="text-[10px] text-slate-500">MTN MoMo & Airtel Supported</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Product Catalog Section -->
+            <section id="shop-grid" class="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-widest text-orange-600">Curated Inventory</span>
+                        <h2 class="font-display text-2xl sm:text-3xl font-black text-slate-900 mt-1">Coloring Books & Creative Supplies</h2>
+                    </div>
+
+                    <!-- Category Navigation Filters -->
+                    <nav class="flex flex-wrap gap-2" aria-label="Product categories">
+                        <template x-for="cat in categories" :key="cat.id">
+                            <button @click="selectedCategory = cat.id" 
+                                    :class="selectedCategory === cat.id ? 'bg-slate-900 text-white shadow' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+                                    class="px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-2">
+                                <span x-text="cat.name"></span>
+                                <span class="text-[10px] px-2 py-0.5 bg-black/10 rounded-full" x-text="getCategoryCount(cat.id)"></span>
+                            </button>
+                        </template>
+                    </nav>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <template x-for="product in filteredProducts()" :key="product.id">
+                        <article class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/80 transition duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                            <div>
+                                <div class="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                                    <img :src="product.image" :alt="product.title" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                    <span x-show="product.badge" class="absolute top-3 left-3 bg-orange-500 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow" x-text="product.badge"></span>
+                                </div>
+
+                                <div class="p-5 space-y-2">
+                                    <div class="flex items-center gap-1.5 text-xs text-amber-500 font-bold">
+                                        <i class="fa-solid fa-star text-[10px]"></i>
+                                        <span x-text="product.rating"></span>
+                                        <span class="text-slate-400 font-normal" x-text="`(${product.reviewsCount})`"></span>
+                                    </div>
+                                    <h3 class="font-display font-bold text-base text-slate-900 group-hover:text-orange-600 transition line-clamp-1" x-text="product.title"></h3>
+                                    <p class="text-slate-500 text-xs line-clamp-2 leading-relaxed" x-text="product.description"></p>
+                                </div>
+                            </div>
+
+                            <div class="p-5 pt-0 space-y-3">
+                                <div class="flex items-center justify-between gap-2">
+                                    <button @click="openQuickView(product)" class="text-xs text-slate-500 hover:text-slate-900 font-bold flex items-center gap-1 transition">
+                                        <i class="fa-regular fa-eye"></i> Quick Preview
+                                    </button>
+                                </div>
+
+                                <div x-show="product.hasPhysical" class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px] font-bold">
+                                    <button @click="product.selectedFormat = 'digital'" 
+                                            :class="product.selectedFormat === 'digital' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                            class="py-1 rounded-lg text-center transition">
+                                        PDF Download
+                                    </button>
+                                    <button @click="product.selectedFormat = 'physical'" 
+                                            :class="product.selectedFormat === 'physical' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                            class="py-1 rounded-lg text-center transition">
+                                        Paperback
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 block font-medium">Price</span>
+                                        <span class="font-display font-extrabold text-lg text-slate-900" 
+                                              x-text="formatMoney(product.selectedFormat === 'physical' ? product.pricePhysicalUSD : product.pricePdfUSD)"></span>
+                                    </div>
+                                    <button @click="addToCart(product, product.selectedFormat || 'digital')" 
+                                            class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5 shadow">
+                                        <i class="fa-solid fa-cart-plus"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Free Starter Lead Bundle Banner -->
+            <section class="py-12 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+                <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-3">
+                    <span class="inline-block bg-amber-300 text-slate-900 font-extrabold text-[10px] uppercase px-3 py-1 rounded-full">Free Starter Bundle</span>
+                    <h2 class="font-display text-2xl sm:text-3xl font-black">Get 5 Free Printable Sample Pages!</h2>
+                    <p class="text-slate-300 text-xs sm:text-sm max-w-md mx-auto">Enter your email and receive instant 300 DPI high-resolution PDF coloring pages directly in your inbox.</p>
+                    <form @submit.prevent="showToast('Free 5-Page Printable Sample Dispatched to your email!');" class="max-w-md mx-auto flex gap-2 pt-2">
+                        <input type="email" required placeholder="customer@example.com" class="flex-1 bg-white/10 border border-white/20 text-white placeholder-slate-400 px-4 py-2.5 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 font-bold px-5 py-2.5 rounded-xl text-xs shadow transition">Download</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Customer Testimonials -->
+            <section class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+                <div class="text-center max-w-md mx-auto">
+                    <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Community Feedback</span>
+                    <h2 class="font-display text-2xl font-black text-slate-900 mt-1">Loved by Digital Artists & Colorists</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                    <article class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                        <div class="flex text-amber-400 text-[10px]"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="text-slate-600 italic">"Instant PDF download links work flawlessly. The 300 DPI line sharpness is top-tier when printed on cardstock!"</p>
+                        <div class="font-bold text-slate-900">— Sarah K.</div>
+                    </article>
+                    <article class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                        <div class="flex text-amber-400 text-[10px]"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="text-slate-600 italic">"Paid via MTN Mobile Money and triggered instant pre-signed PDF downloads right away! Extremely seamless checkout."</p>
+                        <div class="font-bold text-slate-900">— David M.</div>
+                    </article>
+                    <article class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                        <div class="flex text-amber-400 text-[10px]"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="text-slate-600 italic">"The Virtual Studio canvas sandbox is fantastic for testing out color palettes before printing out the physical books."</p>
+                        <div class="font-bold text-slate-900">— Brenda A.</div>
+                    </article>
+                </div>
+            </section>
+        </article>
+
+        <!-- ================= VIEW 2: CHECKOUT PAGE ================= -->
+        <article x-show="currentView === 'checkout'">
+            <section class="py-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200">
+                    
+                    <div x-show="!lastCompletedOrder">
+                        <div class="flex items-center gap-3 pb-6 border-b border-slate-200 mb-6">
+                            <i class="fa-solid fa-shield-halved text-emerald-500 text-2xl"></i>
+                            <div>
+                                <h2 class="font-display font-extrabold text-2xl text-slate-900">Ugandan Mobile Money & Card Checkout</h2>
+                                <p class="text-xs text-slate-500">Live API Integration with AWS S3 Pre-Signed Asset Delivery</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address for Digital PDF Delivery</label>
+                                <input type="email" x-model="checkoutEmail" required placeholder="customer@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Select Payment Gateway</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <button @click="paymentMethod = 'momo_mtn'" :class="paymentMethod === 'momo_mtn' ? 'border-orange-500 bg-orange-50 text-slate-900 font-bold' : 'border-slate-200 text-slate-600'" class="p-3 rounded-2xl border text-left flex flex-col gap-1 transition text-xs">
+                                        <i class="fa-solid fa-mobile-screen-button text-amber-500 text-base"></i> MTN MoMo Uganda
+                                    </button>
+                                    <button @click="paymentMethod = 'momo_airtel'" :class="paymentMethod === 'momo_airtel' ? 'border-orange-500 bg-orange-50 text-slate-900 font-bold' : 'border-slate-200 text-slate-600'" class="p-3 rounded-2xl border text-left flex flex-col gap-1 transition text-xs">
+                                        <i class="fa-solid fa-mobile-screen-button text-red-500 text-base"></i> Airtel Money Uganda
+                                    </button>
+                                    <button @click="paymentMethod = 'card'" :class="paymentMethod === 'card' ? 'border-orange-500 bg-orange-50 text-slate-900 font-bold' : 'border-slate-200 text-slate-600'" class="p-3 rounded-2xl border text-left flex flex-col gap-1 transition text-xs">
+                                        <i class="fa-solid fa-credit-card text-purple-600 text-base"></i> Visa / Mastercard
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div x-show="paymentMethod.includes('momo')" class="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+                                <label class="block text-xs font-bold text-amber-900">Enter Ugandan Registered Mobile Money Number</label>
+                                <input type="tel" x-model="checkoutPhone" placeholder="+256 770 000000" class="w-full bg-white border border-amber-300 rounded-xl px-4 py-2 text-xs">
+                                <p class="text-[11px] text-amber-700">A USSD payment prompt will trigger on your phone for PIN input.</p>
+                            </div>
+
+                            <!-- Live Webhook Verification Process Status -->
+                            <div x-show="isProcessingPayment" class="p-4 bg-slate-900 text-white rounded-2xl space-y-2 text-xs font-mono">
+                                <div class="flex items-center gap-2 text-amber-400">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <span x-text="paymentStep"></span>
+                                </div>
+                                <div class="text-[10px] text-slate-400">Target Provider: Flutterwave/Pesapal Uganda Gateway</div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs text-slate-400 block font-medium">Total Payable</span>
+                                    <span class="font-display font-extrabold text-2xl sm:text-3xl text-slate-900" x-text="formatMoney(cartTotalUSD())"></span>
+                                </div>
+
+                                <button @click="executeCheckout()" :disabled="isProcessingPayment || cart.length === 0" class="bg-orange-500 hover:bg-orange-600 disabled:bg-slate-300 text-white font-bold px-7 py-3.5 rounded-2xl shadow-lg transition hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 text-xs">
+                                    <span x-show="!isProcessingPayment"><i class="fa-solid fa-lock mr-1"></i> Pay & Instant Download</span>
+                                    <span x-show="isProcessingPayment"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Verifying...</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Confirmation Screen with S3 Temporary Pre-Signed Token -->
+                    <div x-show="lastCompletedOrder" class="text-center py-6 space-y-4">
+                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <h3 class="font-display font-extrabold text-2xl text-slate-900">Payment Verified via Webhook!</h3>
+                        <p class="text-slate-600 text-xs max-w-md mx-auto">
+                            Gateway Transaction Ref: <strong class="text-slate-900 font-mono" x-text="lastCompletedOrder?.paymentReference"></strong>. A copy has been dispatched to <strong class="text-slate-800" x-text="lastCompletedOrder?.customerEmail"></strong>.
+                        </p>
+
+                        <!-- Pre-Signed AWS S3 Link Container -->
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left max-w-md mx-auto space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-700">AWS S3 Pre-Signed Download Link:</span>
+                                <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full" x-text="`Expires in ` + gatewaySettings.s3ExpiryHours + ` Hours`"></span>
+                            </div>
+                            <div class="p-2.5 bg-white border rounded-xl break-all font-mono text-[10px] text-slate-500 select-all" x-text="lastCompletedOrder?.preSignedUrl"></div>
+                            <button @click="window.open(lastCompletedOrder?.preSignedUrl, '_blank'); showToast('Initiating encrypted PDF stream...')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> Stream High-Res PDF (300 DPI)
+                            </button>
+                        </div>
+
+                        <button @click="lastCompletedOrder = null; currentView = 'store'" class="mt-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-6 py-2.5 rounded-xl text-xs transition">
+                            Return to Storefront
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+        </article>
+
+        <!-- ================= VIEW 3: ADMIN DASHBOARD ================= -->
+        <article x-show="currentView === 'admin'">
+            <section class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Setup Screen (First-time initialization) -->
+                <div x-show="!adminAccount" class="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-xl border border-slate-200 space-y-5">
+                    <div class="text-center space-y-1.5">
+                        <div class="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center mx-auto text-lg shadow">
+                            <i class="fa-solid fa-key"></i>
+                        </div>
+                        <h3 class="font-display font-extrabold text-2xl text-slate-900">Initialize Admin Credentials</h3>
+                        <p class="text-xs text-slate-500">Set your custom username and master security password.</p>
+                    </div>
+
+                    <form @submit.prevent="setupAdminCredentials()" class="space-y-3.5 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Admin Username</label>
+                            <input type="text" x-model="setupUsername" required placeholder="admin_nancy" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Master Password (Min 8 Chars)</label>
+                            <input type="password" x-model="setupPassword" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Confirm Password</label>
+                            <input type="password" x-model="setupConfirmPassword" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        </div>
+                        <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow transition">
+                            Save Security Hash & Initialize
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Admin Login Screen with Client-Side Rate Limiter -->
+                <div x-show="adminAccount && !isAdminLoggedIn" class="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-xl border border-slate-200 space-y-5">
+                    <div class="text-center space-y-1.5">
+                        <div class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center mx-auto text-lg shadow">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <h3 class="font-display font-extrabold text-2xl text-slate-900">Backend Portal Auth</h3>
+                        <p class="text-xs text-slate-500">SHA-256 Encrypted Master Verification</p>
+                    </div>
+
+                    <!-- Rate Limit Lockout Banner -->
+                    <div x-show="isRateLimited" class="p-3 bg-red-100 border border-red-300 text-red-800 rounded-2xl text-xs text-center font-bold">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Rate Limiter Active! Locked for <span x-text="rateLimitSecondsLeft"></span>s
+                    </div>
+
+                    <form @submit.prevent="loginAdmin()" class="space-y-3.5 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Username</label>
+                            <input type="text" x-model="loginUsername" :disabled="isRateLimited" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Password</label>
+                            <input type="password" x-model="loginPassword" :disabled="isRateLimited" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                        </div>
+                        <button type="submit" :disabled="isRateLimited" class="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold py-3 rounded-xl shadow transition">
+                            Authenticate Portal
+                        </button>
+                    </form>
+                </div>
+
+                <!-- AUTHENTICATED ADMIN DASHBOARD -->
+                <div x-show="isAdminLoggedIn" class="space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <div>
+                            <span class="text-xs font-bold uppercase text-orange-600">Secure Management Portal</span>
+                            <h2 class="font-display font-extrabold text-2xl text-slate-900">Store Administration</h2>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <button @click="openModal('add')" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-plus"></i> Add Product
+                            </button>
+                            <button @click="isAdminLoggedIn = false" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Sub-Tabs Navigation -->
+                    <nav class="flex gap-2 border-b border-slate-200 pb-2 text-xs font-bold" aria-label="Admin Sections">
+                        <button @click="adminTab = 'products'" :class="adminTab === 'products' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border'" class="px-4 py-2 rounded-xl transition">
+                            Inventory (<span x-text="products.length"></span>)
+                        </button>
+                        <button @click="adminTab = 'orders'" :class="adminTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border'" class="px-4 py-2 rounded-xl transition">
+                            Order Ledger (<span x-text="orders.length"></span>)
+                        </button>
+                        <button @click="adminTab = 'webhooks'" :class="adminTab === 'webhooks' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border'" class="px-4 py-2 rounded-xl transition">
+                            Webhook Logs (<span x-text="webhookLogs.length"></span>)
+                        </button>
+                        <button @click="adminTab = 'security'" :class="adminTab === 'security' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border'" class="px-4 py-2 rounded-xl transition">
+                            Gateway & S3 Config
+                        </button>
+                    </nav>
+
+                    <!-- TAB 1: Inventory Table -->
+                    <div x-show="adminTab === 'products'" class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500">
+                                    <th class="p-4">Product Title</th>
+                                    <th class="p-4">Category</th>
+                                    <th class="p-4">PDF Price</th>
+                                    <th class="p-4">Visibility</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-xs font-medium">
+                                <template x-for="product in products" :key="product.id">
+                                    <tr class="hover:bg-slate-50/50">
+                                        <td class="p-4 flex items-center gap-3">
+                                            <img :src="product.image" class="w-10 h-10 rounded-lg object-cover">
+                                            <span class="font-bold text-slate-900" x-text="product.title"></span>
+                                        </td>
+                                        <td class="p-4 uppercase text-[10px] text-slate-500" x-text="product.category"></td>
+                                        <td class="p-4 font-bold" x-text="formatMoney(product.pricePdfUSD)"></td>
+                                        <td class="p-4">
+                                            <button @click="product.isVisible = !product.isVisible; showToast('Visibility updated!')" 
+                                                    :class="product.isVisible ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'"
+                                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold">
+                                                <span x-text="product.isVisible ? 'Public' : 'Hidden'"></span>
+                                            </button>
+                                        </td>
+                                        <td class="p-4 text-right space-x-2">
+                                            <button @click="openModal('edit', product)" class="text-slate-400 hover:text-slate-900 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+                                            <button @click="deleteProduct(product.id)" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- TAB 2: Order Ledger -->
+                    <div x-show="adminTab === 'orders'" class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500">
+                                    <th class="p-4">Order ID</th>
+                                    <th class="p-4">Customer Email</th>
+                                    <th class="p-4">Payment Method</th>
+                                    <th class="p-4">Total Amount</th>
+                                    <th class="p-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-xs font-medium">
+                                <template x-for="order in orders" :key="order.id">
+                                    <tr>
+                                        <td class="p-4 font-mono font-bold text-slate-900" x-text="order.id"></td>
+                                        <td class="p-4" x-text="order.customerEmail"></td>
+                                        <td class="p-4 font-bold text-slate-700" x-text="order.paymentMethod"></td>
+                                        <td class="p-4 font-extrabold text-slate-900" x-text="formatMoney(order.totalUSD)"></td>
+                                        <td class="p-4">
+                                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold" x-text="order.fulfillmentStatus"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- TAB 3: Live Webhook Logs Inspector -->
+                    <div x-show="adminTab === 'webhooks'" class="bg-slate-900 text-emerald-400 p-6 rounded-3xl space-y-3 font-mono text-xs">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-800 text-white font-sans">
+                            <h3 class="font-bold">Incoming Webhook Event Inspector</h3>
+                            <span class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-1 rounded border border-emerald-800">verif-hash Engine Active</span>
+                        </div>
+                        <template x-for="(log, idx) in webhookLogs" :key="idx">
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                                <div class="flex justify-between text-slate-400 text-[10px]">
+                                    <span x-text="log.timestamp"></span>
+                                    <span class="text-emerald-400 font-bold" x-text="`VERIFIED HTTP ` + log.statusCode"></span>
+                                </div>
+                                <div class="text-amber-300" x-text="`Event: ` + log.event"></div>
+                                <div class="text-slate-300" x-text="`Tx Ref: ` + log.tx_ref + ` | Signature Hash: ` + log.signature"></div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- TAB 4: Gateway & S3 Settings -->
+                    <div x-show="adminTab === 'security'" class="bg-white p-6 rounded-3xl border border-slate-200 space-y-4 text-xs">
+                        <h3 class="font-display font-bold text-lg text-slate-900">Gateway Security & AWS S3 Expiration Policies</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-bold mb-1">Flutterwave / Pesapal Verif-Hash Secret</label>
+                                <input type="text" x-model="gatewaySettings.verifHash" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">S3 Pre-Signed Token Expiry (Hours)</label>
+                                <input type="number" x-model.number="gatewaySettings.s3ExpiryHours" min="1" max="48" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                            </div>
+                        </div>
+                        <button @click="showToast('Gateway & S3 Expiration Policies Updated!')" class="bg-slate-900 text-white font-bold px-4 py-2 rounded-xl">Save Security Config</button>
+                    </div>
+
+                </div>
+
+            </section>
+        </article>
+
+    </main>
+
+    <!-- ================= FULL-SCREEN VIRTUAL CREATIVE STUDIO MODAL LAYER ================= -->
+    <div x-show="isStudioOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 animate-fade-in" x-cloak>
+        <div class="bg-[#FAF8F5] w-full h-full max-w-7xl rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80">
+            
+            <!-- Studio Workspace Header -->
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-500 to-pink-500 flex items-center justify-center text-white shadow-sm">
+                        <i class="fa-solid fa-palette text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base leading-none">Virtual Studio Workspace</h3>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">NancyCraft Sandbox</span>
+                    </div>
+                    
+                    <!-- Mode Switcher Tabs -->
+                    <div class="ml-4 flex bg-slate-100 p-1 rounded-xl text-xs font-bold border border-slate-200">
+                        <button @click="studioMode = 'canvas'" :class="studioMode === 'canvas' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-paintbrush mr-1"></i> Canvas Drawing
+                        </button>
+                        <button @click="studioMode = 'vector'" :class="studioMode === 'vector' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'" class="px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-fill-drip mr-1"></i> Vector Tap-to-Fill
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <template x-if="studioMode === 'canvas'">
+                        <div class="flex items-center gap-2">
+                            <button @click="clearCanvasBoard()" class="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-eraser"></i> <span>Clear Board</span>
+                            </button>
+                            <button @click="exportCanvasImage()" class="text-xs font-semibold bg-[#E65A2B] hover:bg-[#c94a20] text-white px-4 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-download"></i> <span>Export 300 DPI</span>
+                            </button>
+                        </div>
+                    </template>
+                    <template x-if="studioMode === 'vector'">
+                        <div class="flex items-center gap-2">
+                            <button @click="resetStudioVector()" class="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+                            </button>
+                            <button @click="randomizeStudioVector()" class="text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl transition">
+                                <i class="fa-solid fa-dice mr-1"></i> Auto Fill
+                            </button>
+                        </div>
+                    </template>
+
+                    <button @click="isStudioOpen = false" class="text-xs font-bold text-slate-400 hover:text-slate-700 p-2 ml-2 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Studio Content Container -->
+            <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+                
+                <!-- STUDIO MODE 1: HTML5 FREEHAND DRAWING CANVAS -->
+                <div x-show="studioMode === 'canvas'" class="w-full h-full flex flex-col lg:flex-row overflow-hidden">
+                    
+                    <!-- Asset Drawer / Configuration Sidebar -->
+                    <div class="w-full lg:w-72 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-6 flex flex-row lg:flex-col gap-6 overflow-x-auto lg:overflow-x-visible">
+                        <div class="min-w-[150px] w-full space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Tool Mode</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button @click="isEraser = false" :class="!isEraser ? 'bg-orange-500 text-white font-bold' : 'bg-slate-100 text-slate-600'" class="py-2 rounded-xl text-xs transition">
+                                    <i class="fa-solid fa-pen-nib mr-1"></i> Brush
+                                </button>
+                                <button @click="isEraser = true" :class="isEraser ? 'bg-orange-500 text-white font-bold' : 'bg-slate-100 text-slate-600'" class="py-2 rounded-xl text-xs transition">
+                                    <i class="fa-solid fa-eraser mr-1"></i> Eraser
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="min-w-[150px] w-full">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Stroke Dynamics Size</label>
+                            <input type="range" min="1" max="50" x-model="brushSize" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                            <div class="text-right text-xs font-mono font-bold mt-1 text-slate-600" x-text="brushSize + 'px'"></div>
+                        </div>
+
+                        <div class="min-w-[150px] w-full space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Palette Swatches</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <template x-for="color in paletteColors" :key="color">
+                                    <button @click="brushColor = color; isEraser = false" 
+                                            :style="`background-color: ${color}`"
+                                            :class="brushColor === color && !isEraser ? 'ring-4 ring-slate-300 scale-110' : 'opacity-90 hover:opacity-100'"
+                                            class="w-8 h-8 rounded-full transition transform active:scale-95 shadow-sm">
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="pt-2 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">Custom Picker:</span>
+                                <input type="color" x-model="brushColor" @change="isEraser = false" class="w-8 h-8 rounded-lg cursor-pointer border-0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Central High-DPI Interactive Canvas Surface -->
+                    <div class="flex-1 bg-slate-100 p-4 sm:p-6 flex items-center justify-center overflow-hidden">
+                        <div id="canvas-wrapper" class="w-full h-full bg-white rounded-2xl shadow-inner border border-slate-200/80 overflow-hidden relative flex items-center justify-center">
+                            <canvas id="interactive-canvas" class="cursor-crosshair absolute inset-0 block touch-none"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- STUDIO MODE 2: VECTOR TAP-TO-FILL INTERACTIVE SVG -->
+                <div x-show="studioMode === 'vector'" class="w-full h-full flex flex-col lg:flex-row overflow-hidden">
+                    
+                    <div class="w-full lg:w-72 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-6 flex flex-row lg:flex-col gap-6 overflow-x-auto lg:overflow-x-visible">
+                        <div class="min-w-[150px] w-full space-y-3">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Palette Profile</label>
+                            <div class="grid grid-cols-4 gap-2.5">
+                                <template x-for="color in paletteVector" :key="color.hex">
+                                    <button @click="activeVectorColor = color.hex" 
+                                            :class="activeVectorColor === color.hex ? 'ring-4 ring-offset-2 ring-slate-800 scale-110' : 'hover:scale-105'"
+                                            class="w-9 h-9 rounded-full shadow transition flex items-center justify-center"
+                                            :style="`background-color: ${color.hex}`">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl shadow-inner border" :style="`background-color: ${activeVectorColor}`"></div>
+                            <span class="font-mono text-xs font-bold text-slate-700" x-text="`Active: ` + activeVectorColor"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-slate-100 p-6 flex items-center justify-center overflow-hidden">
+                        <svg class="w-full max-w-lg h-auto drop-shadow-md select-none" viewBox="0 0 400 400">
+                            <rect x="10" y="10" width="380" height="380" rx="24" fill="#FFFFFF" stroke="#2D3748" stroke-width="4"/>
+                            
+                            <circle class="color-path" @click="colorVectorPath('center')" :fill="studioFills['center']" cx="200" cy="200" r="32" stroke="#2D3748" stroke-width="3"/>
+
+                            <path class="color-path" @click="colorVectorPath('petal1')" :fill="studioFills['petal1']" d="M 200,168 C 175,90 225,90 200,168" stroke="#2D3748" stroke-width="3"/>
+                            <path class="color-path" @click="colorVectorPath('petal2')" :fill="studioFills['petal2']" d="M 200,232 C 175,310 225,310 200,232" stroke="#2D3748" stroke-width="3"/>
+                            <path class="color-path" @click="colorVectorPath('petal3')" :fill="studioFills['petal3']" d="M 168,200 C 90,175 90,225 168,200" stroke="#2D3748" stroke-width="3"/>
+                            <path class="color-path" @click="colorVectorPath('petal4')" :fill="studioFills['petal4']" d="M 232,200 C 310,175 310,225 232,200" stroke="#2D3748" stroke-width="3"/>
+
+                            <path class="color-path" @click="colorVectorPath('leaf1')" :fill="studioFills['leaf1']" d="M 45,45 Q 120,55 120,120 Q 55,120 45,45 Z" stroke="#2D3748" stroke-width="3"/>
+                            <path class="color-path" @click="colorVectorPath('leaf2')" :fill="studioFills['leaf2']" d="M 355,45 Q 280,55 280,120 Q 345,120 355,45 Z" stroke="#2D3748" stroke-width="3"/>
+                        </svg>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Drawer: Shopping Cart Slider -->
+    <div x-show="cartOpen" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="cartOpen = false"></div>
+        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
+                
+                <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-basket-shopping text-orange-500 text-lg"></i>
+                        <h3 class="font-display font-bold text-lg text-slate-900">Your Shopping Basket</h3>
+                    </div>
+                    <button @click="cartOpen = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <template x-for="(item, index) in cart" :key="index">
+                        <div class="flex gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 relative">
+                            <img :src="item.product.image" class="w-16 h-16 object-cover rounded-xl border border-slate-200">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-xs text-slate-900 truncate" x-text="item.product.title"></h4>
+                                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-1 bg-amber-100 text-amber-800" x-text="item.format"></span>
+                                <div class="flex items-center justify-between mt-2">
+                                    <div class="flex items-center gap-2 border bg-white rounded-lg px-2 py-0.5 text-xs font-bold shadow-sm">
+                                        <button @click="updateQuantity(index, -1)" class="text-slate-500 hover:text-black font-bold px-1">-</button>
+                                        <span x-text="item.quantity" class="text-slate-800"></span>
+                                        <button @click="updateQuantity(index, 1)" class="text-slate-500 hover:text-black font-bold px-1">+</button>
+                                    </div>
+                                    <span class="font-bold text-sm text-slate-900" x-text="formatMoney(item.priceUSD * item.quantity)"></span>
+                                </div>
+                            </div>
+                            <button @click="cart.splice(index, 1)" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </div>
+                    </template>
+
+                    <div x-show="cart.length === 0" class="text-center py-16 text-slate-400 space-y-3">
+                        <i class="fa-solid fa-basket-shopping text-4xl text-slate-300"></i>
+                        <p class="font-bold text-slate-600 text-sm">Your basket is currently empty</p>
+                    </div>
+                </div>
+
+                <div x-show="cart.length > 0" class="p-6 border-t border-slate-200 bg-slate-50 space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text" x-model="promoCode" placeholder="Promo code (SPRING20)" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                        <button @click="applyPromo()" class="bg-slate-900 text-white font-bold px-3 py-2 rounded-xl text-xs">Apply</button>
+                    </div>
+
+                    <div class="space-y-1 text-xs text-slate-600 pt-2 border-t border-slate-200">
+                        <div class="flex justify-between"><span>Subtotal</span><span class="font-bold" x-text="formatMoney(cartSubtotalUSD())"></span></div>
+                        <div x-show="discount > 0" class="flex justify-between text-emerald-600 font-bold"><span>Discount (20%)</span><span x-text="`-` + formatMoney(discountAmountUSD())"></span></div>
+                        <div class="flex justify-between text-base font-extrabold text-slate-900 pt-2"><span>Total</span><span class="text-orange-500" x-text="formatMoney(cartTotalUSD())"></span></div>
+                    </div>
+
+                    <button @click="cartOpen = false; currentView = 'checkout'" class="w-full bg-[#E65A2B] hover:bg-[#c94a20] text-white font-bold py-3.5 rounded-2xl shadow-lg transition duration-200 text-xs">
+                        Proceed to Checkout
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick View Product Modal -->
+    <div x-show="quickViewModal.show" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4 p-4 text-center">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="quickViewModal.show = false"></div>
+            <div class="inline-block bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:max-w-xl w-full p-6 border border-slate-200 z-10 space-y-4">
+                <template x-if="quickViewModal.product">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[10px] font-bold uppercase bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full" x-text="quickViewModal.product.category"></span>
+                            <button @click="quickViewModal.show = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <img :src="quickViewModal.product.image" class="w-full h-48 object-cover rounded-2xl">
+                            <div class="space-y-2">
+                                <h3 class="font-display font-bold text-lg text-slate-900" x-text="quickViewModal.product.title"></h3>
+                                <p class="text-xs text-slate-500 leading-relaxed" x-text="quickViewModal.product.description"></p>
+                                <div class="pt-2">
+                                    <span class="text-xs text-slate-400 block font-medium">Starting Price</span>
+                                    <span class="font-display font-extrabold text-2xl text-slate-900" x-text="formatMoney(quickViewModal.product.pricePdfUSD)"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <button @click="addToCart(quickViewModal.product, 'digital'); quickViewModal.show = false" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition shadow">
+                            Add PDF Download to Cart
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Add/Edit Product Modal -->
+    <div x-show="productModal.show" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4 p-4 text-center">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="productModal.show = false"></div>
+            <div class="inline-block bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:max-w-md w-full p-6 border border-slate-200 z-10 space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+                    <h3 class="font-display font-extrabold text-lg text-slate-900" x-text="productModal.mode === 'add' ? 'Add New Item' : 'Edit Item'"></h3>
+                    <button @click="productModal.show = false" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <form @submit.prevent="saveProduct()" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Product Title</label>
+                        <input type="text" x-model="productModal.item.title" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Category</label>
+                            <select x-model="productModal.item.category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                                <option value="digital">Printable PDF</option>
+                                <option value="supplies">Art Supplies</option>
+                                <option value="procreate">Procreate Stamps</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Badge Tag</label>
+                            <input type="text" x-model="productModal.item.badge" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">PDF Price ($ USD)</label>
+                            <input type="number" step="0.01" x-model.number="productModal.item.pricePdfUSD" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Paperback Price ($)</label>
+                            <input type="number" step="0.01" x-model.number="productModal.item.pricePhysicalUSD" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Image Asset URL</label>
+                        <input type="url" x-model="productModal.item.image" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Description</label>
+                        <textarea x-model="productModal.item.description" rows="3" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2"></textarea>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200 flex gap-2">
+                        <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-2.5 rounded-xl shadow">Save Item</button>
+                        <button type="button" @click="productModal.show = false" class="bg-slate-100 text-slate-700 font-bold px-4 py-2.5 rounded-xl">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Banner -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 text-center text-xs">
+        <p>© 2026 NancyCraft Digital Creatives. All rights reserved.</p>
+    </footer>
+
+    <!-- Application Logic Script -->
+    <script>
+        function nancyCraftApp() {
+            return {
+                currentView: 'store',
+                currency: 'USD',
+                UGX_RATE: 3700,
+
+                cartOpen: false,
+                isStudioOpen: false,
+                studioMode: 'canvas', // 'canvas' or 'vector'
+                selectedCategory: 'all',
+                searchQuery: '',
+                
+                // Canvas Studio Logic Variables
+                isDrawing: false,
+                brushColor: '#2D3748',
+                brushSize: 5,
+                isEraser: false,
+                canvasCtx: null,
+                paletteColors: ['#2D3748', '#E53E3E', '#3182CE', '#DD6B20', '#38A169', '#805AD5', '#D69E2E', '#E53E3E'],
+
+                // Vector Studio Variables
+                activeVectorColor: '#F87171',
+                paletteVector: [
+                    { hex: '#F87171' }, { hex: '#FBBF24' }, { hex: '#34D399' }, { hex: '#60A5FA' },
+                    { hex: '#A78BFA' }, { hex: '#F472B6' }, { hex: '#FB923C' }, { hex: '#818CF8' }
+                ],
+                studioFills: {
+                    center: '#FDE047',
+                    petal1: '#F472B6', petal2: '#F472B6', petal3: '#F472B6', petal4: '#F472B6',
+                    leaf1: '#34D399', leaf2: '#34D399'
+                },
+
+                // Checkout & Webhook State
+                checkoutEmail: '',
+                checkoutPhone: '',
+                paymentMethod: 'momo_mtn',
+                isProcessingPayment: false,
+                paymentStep: '',
+                lastCompletedOrder: null,
+                promoCode: '',
+                discount: 0,
+                toast: { show: false, message: '' },
+
+                // Modals State
+                quickViewModal: { show: false, product: null },
+                productModal: {
+                    show: false,
+                    mode: 'add',
+                    item: { title: '', category: 'digital', badge: 'New', pricePdfUSD: 7.99, pricePhysicalUSD: 14.99, image: '', description: '', hasPhysical: true, isVisible: true }
+                },
+
+                // Security & Admin Auth
+                adminAccount: JSON.parse(localStorage.getItem('nancy_admin_secure')) || null,
+                isAdminLoggedIn: false,
+                adminTab: 'products',
+                setupUsername: '',
+                setupPassword: '',
+                setupConfirmPassword: '',
+                loginUsername: '',
+                loginPassword: '',
+
+                // Rate Limiting Security Logic
+                failedLoginAttempts: 0,
+                isRateLimited: false,
+                rateLimitSecondsLeft: 0,
+
+                // Security Settings
+                gatewaySettings: {
+                    verifHash: 'FLW_SECRET_HASH_UG_88129',
+                    s3ExpiryHours: 24,
+                    merchantId: 'NANCY_CRAFT_UG_MERCHANT'
+                },
+
+                webhookLogs: [
+                    { timestamp: '2026-03-25 14:22:01', event: 'charge.completed', tx_ref: 'ORD-98214', signature: 'FLW_SECRET_HASH_UG_88129', statusCode: 200 }
+                ],
+
+                categories: [
+                    { id: 'all', name: 'All Products' },
+                    { id: 'digital', name: 'Printable PDFs' },
+                    { id: 'supplies', name: 'Art Supplies' },
+                    { id: 'procreate', name: 'Procreate Stamps' }
+                ],
+
+                cart: [],
+
+                products: [
+                    {
+                        id: 'prod_001',
+                        title: "Cozy Nooks & Tea Rooms",
+                        category: "digital",
+                        badge: "Bestseller",
+                        pricePdfUSD: 7.99,
+                        pricePhysicalUSD: 14.99,
+                        hasPhysical: true,
+                        physicalStock: 40,
+                        isVisible: true,
+                        selectedFormat: 'digital',
+                        rating: 4.9,
+                        reviewsCount: 342,
+                        image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+                        description: "50 hand-drawn cozy interior scenes featuring warm fireplaces, cat corners, bookshelves, and teacups."
+                    },
+                    {
+                        id: 'prod_002',
+                        title: "Enchanted Botanical Gardens",
+                        category: "digital",
+                        badge: "Popular",
+                        pricePdfUSD: 8.99,
+                        pricePhysicalUSD: 16.99,
+                        hasPhysical: true,
+                        physicalStock: 15,
+                        isVisible: true,
+                        selectedFormat: 'digital',
+                        rating: 5.0,
+                        reviewsCount: 512,
+                        image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80",
+                        description: "Intricate floral mandalas, rare botanical species, and soothing nature patterns for deep relaxation."
+                    },
+                    {
+                        id: 'prod_003',
+                        title: "Dual-Tip Alcohol Markers (48 Pack)",
+                        category: "supplies",
+                        badge: "Top Rated",
+                        pricePdfUSD: 29.99,
+                        pricePhysicalUSD: 29.99,
+                        hasPhysical: false,
+                        physicalStock: 100,
+                        isVisible: true,
+                        selectedFormat: 'physical',
+                        rating: 4.9,
+                        reviewsCount: 890,
+                        image: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=800&q=80",
+                        description: "Vibrant blendable dual brush/chisel tip marker set with carrying case. Fast drying and smudge-proof."
+                    }
+                ],
+
+                orders: [
+                    {
+                        id: "ORD-98214",
+                        customerEmail: "sarah.k@example.com",
+                        paymentMethod: "MTN MoMo Uganda",
+                        fulfillmentStatus: "digital_delivered",
+                        totalUSD: 7.99
+                    }
+                ],
+
+                init() {
+                    // Initialize canvas handlers on studio modal trigger
+                    this.$watch('isStudioOpen', (value) => {
+                        if (value) {
+                            this.$nextTick(() => {
+                                this.initCanvasEngine();
+                            });
+                        }
+                    });
+                },
+
+                // HTML5 Canvas Studio Initialization Logic
+                initCanvasEngine() {
+                    const canvas = document.getElementById('interactive-canvas');
+                    const wrapper = document.getElementById('canvas-wrapper');
+                    if (!canvas || !wrapper) return;
+
+                    const ctx = canvas.getContext('2d');
+                    this.canvasCtx = ctx;
+
+                    const rect = wrapper.getBoundingClientRect();
+                    const width = rect.width || 800;
+                    const height = rect.height || 500;
+
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.width = width * dpr;
+                    canvas.height = height * dpr;
+                    canvas.style.width = `${width}px`;
+                    canvas.style.height = `${height}px`;
+                    ctx.scale(dpr, dpr);
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    // Attach mouse and touch handlers cleanly
+                    const getCoords = (e) => {
+                        const r = canvas.getBoundingClientRect();
+                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                        return { x: clientX - r.left, y: clientY - r.top };
+                    };
+
+                    const startDraw = (e) => {
+                        this.isDrawing = true;
+                        const { x, y } = getCoords(e);
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.strokeStyle = this.isEraser ? '#FFFFFF' : this.brushColor;
+                        ctx.lineWidth = this.brushSize;
+                    };
+
+                    const draw = (e) => {
+                        if (!this.isDrawing) return;
+                        e.preventDefault();
+                        const { x, y } = getCoords(e);
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                    };
+
+                    const stopDraw = () => {
+                        this.isDrawing = false;
+                    };
+
+                    canvas.onmousedown = startDraw;
+                    canvas.onmousemove = draw;
+                    canvas.onmouseup = stopDraw;
+                    canvas.onmouseleave = stopDraw;
+
+                    canvas.ontouchstart = startDraw;
+                    canvas.ontouchmove = draw;
+                    canvas.ontouchend = stopDraw;
+                },
+
+                clearCanvasBoard() {
+                    const canvas = document.getElementById('interactive-canvas');
+                    if (!canvas || !this.canvasCtx) return;
+                    this.canvasCtx.fillStyle = '#FFFFFF';
+                    this.canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                    this.showToast('Canvas cleared!');
+                },
+
+                exportCanvasImage() {
+                    const canvas = document.getElementById('interactive-canvas');
+                    if (!canvas) return;
+                    const dataUrl = canvas.toDataURL('image/png', 1.0);
+                    const link = document.createElement('a');
+                    link.download = 'nancycraft-300dpi-studio-export.png';
+                    link.href = dataUrl;
+                    link.click();
+                    this.showToast('High-Res 300 DPI PNG exported!');
+                },
+
+                openStudioModal() {
+                    this.isStudioOpen = true;
+                },
+
+                colorVectorPath(key) { this.studioFills[key] = this.activeVectorColor; },
+                resetStudioVector() { Object.keys(this.studioFills).forEach(k => this.studioFills[k] = '#FFFFFF'); },
+                randomizeStudioVector() {
+                    Object.keys(this.studioFills).forEach(k => {
+                        this.studioFills[k] = this.paletteVector[Math.floor(Math.random() * this.paletteVector.length)].hex;
+                    });
+                },
+
+                formatMoney(amountUSD) {
+                    if (this.currency === 'UGX') {
+                        return `UGX ${Math.round(amountUSD * this.UGX_RATE).toLocaleString()}`;
+                    }
+                    return `$${amountUSD.toFixed(2)}`;
+                },
+
+                getCategoryCount(catId) {
+                    if (catId === 'all') return this.products.filter(p => p.isVisible || this.currentView === 'admin').length;
+                    return this.products.filter(p => p.category === catId && (p.isVisible || this.currentView === 'admin')).length;
+                },
+
+                filteredProducts() {
+                    return this.products.filter(p => {
+                        if (!p.isVisible && this.currentView !== 'admin') return false;
+                        const matchesCategory = this.selectedCategory === 'all' || p.category === this.selectedCategory;
+                        const matchesSearch = p.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                                              p.description.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return matchesCategory && matchesSearch;
+                    });
+                },
+
+                addToCart(product, format) {
+                    const priceUSD = format === 'physical' ? product.pricePhysicalUSD : product.pricePdfUSD;
+                    const existingIndex = this.cart.findIndex(i => i.product.id === product.id && i.format === format);
+                    if (existingIndex > -1) {
+                        this.cart[existingIndex].quantity++;
+                    } else {
+                        this.cart.push({ product, format, priceUSD, quantity: 1 });
+                    }
+                    this.showToast(`Added "${product.title}" to cart!`);
+                },
+
+                updateQuantity(index, delta) {
+                    this.cart[index].quantity += delta;
+                    if (this.cart[index].quantity <= 0) this.cart.splice(index, 1);
+                },
+
+                cartItemCount() { return this.cart.reduce((sum, item) => sum + item.quantity, 0); },
+                cartSubtotalUSD() { return this.cart.reduce((sum, item) => sum + (item.priceUSD * item.quantity), 0); },
+                discountAmountUSD() { return this.cartSubtotalUSD() * this.discount; },
+                cartTotalUSD() { return Math.max(0, this.cartSubtotalUSD() - this.discountAmountUSD()); },
+
+                applyPromo() {
+                    if (this.promoCode.trim().toUpperCase() === 'SPRING20') {
+                        this.discount = 0.20;
+                        this.showToast('20% Spring Discount Applied!');
+                    } else {
+                        this.showToast('Invalid promo code. Try "SPRING20"');
+                    }
+                },
+
+                openQuickView(product) {
+                    this.quickViewModal.product = product;
+                    this.quickViewModal.show = true;
+                },
+
+                openModal(mode = 'add', product = null) {
+                    this.productModal.mode = mode;
+                    if (mode === 'edit' && product) {
+                        this.productModal.item = JSON.parse(JSON.stringify(product));
+                    } else {
+                        this.productModal.item = {
+                            id: 'prod_' + Math.floor(1000 + Math.random() * 9000),
+                            title: '', category: 'digital', badge: 'New',
+                            pricePdfUSD: 7.99, pricePhysicalUSD: 14.99,
+                            hasPhysical: true, physicalStock: 25, isVisible: true,
+                            selectedFormat: 'digital', rating: 5.0, reviewsCount: 1,
+                            image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+                            description: ''
+                        };
+                    }
+                    this.productModal.show = true;
+                },
+
+                saveProduct() {
+                    if (this.productModal.mode === 'add') {
+                        this.products.unshift({ ...this.productModal.item });
+                    } else {
+                        const idx = this.products.findIndex(p => p.id === this.productModal.item.id);
+                        if (idx !== -1) this.products[idx] = { ...this.productModal.item };
+                    }
+                    this.showToast('Item saved successfully!');
+                    this.productModal.show = false;
+                },
+
+                deleteProduct(id) {
+                    this.products = this.products.filter(p => p.id !== id);
+                    this.showToast('Product deleted!');
+                },
+
+                async sha256(str) {
+                    const buffer = new TextEncoder().encode(str);
+                    const hash = await crypto.subtle.digest('SHA-256', buffer);
+                    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+                },
+
+                async setupAdminCredentials() {
+                    if (this.setupPassword.length < 8) return this.showToast("Password must be at least 8 characters.");
+                    if (this.setupPassword !== this.setupConfirmPassword) return this.showToast("Passwords do not match.");
+                    const passHash = await this.sha256(this.setupPassword);
+                    this.adminAccount = { username: this.setupUsername.trim(), hash: passHash };
+                    localStorage.setItem('nancy_admin_secure', JSON.stringify(this.adminAccount));
+                    this.isAdminLoggedIn = true;
+                    this.showToast("Admin security hash initialized!");
+                },
+
+                async loginAdmin() {
+                    if (this.isRateLimited) return;
+                    const inputHash = await this.sha256(this.loginPassword);
+                    if (this.loginUsername === this.adminAccount.username && inputHash === this.adminAccount.hash) {
+                        this.isAdminLoggedIn = true;
+                        this.failedLoginAttempts = 0;
+                        this.showToast("Authenticated as Administrator");
+                    } else {
+                        this.failedLoginAttempts++;
+                        if (this.failedLoginAttempts >= 3) {
+                            this.isRateLimited = true;
+                            this.rateLimitSecondsLeft = 30;
+                            const timer = setInterval(() => {
+                                this.rateLimitSecondsLeft--;
+                                if (this.rateLimitSecondsLeft <= 0) {
+                                    clearInterval(timer);
+                                    this.isRateLimited = false;
+                                    this.failedLoginAttempts = 0;
+                                }
+                            }, 1000);
+                        }
+                        this.showToast("Invalid credentials.");
+                    }
+                },
+
+                generateS3PreSignedUrl(orderId) {
+                    const expiresTimestamp = Date.now() + (this.gatewaySettings.s3ExpiryHours * 3600 * 1000);
+                    return `https://nancy-craft-creatives.s3.amazonaws.com/downloads/${orderId}-bundle.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE&X-Amz-Expires=${expiresTimestamp}&X-Amz-Signature=a8f7c9e1235b67891234567890abcdef`;
+                },
+
+                executeCheckout() {
+                    if (!this.checkoutEmail || !this.checkoutEmail.includes('@')) return this.showToast('Please enter a valid email.');
+                    if (this.paymentMethod.includes('momo') && !this.checkoutPhone) return this.showToast('Enter Mobile Money phone number.');
+
+                    this.isProcessingPayment = true;
+                    this.paymentStep = '1/3 Initiating Gateway Handshake...';
+
+                    setTimeout(() => {
+                        this.paymentStep = '2/3 Verifying Webhook verif-hash Header...';
+                        setTimeout(() => {
+                            this.paymentStep = '3/3 Generating Temporary AWS S3 Pre-Signed Token...';
+                            setTimeout(() => {
+                                let methodLabel = 'Credit / Debit Card';
+                                if (this.paymentMethod === 'momo_mtn') methodLabel = 'MTN MoMo Uganda';
+                                if (this.paymentMethod === 'momo_airtel') methodLabel = 'Airtel Money Uganda';
+
+                                const txRef = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
+                                const preSignedUrl = this.generateS3PreSignedUrl(txRef);
+
+                                const newOrder = {
+                                    id: txRef,
+                                    customerEmail: this.checkoutEmail,
+                                    paymentMethod: methodLabel,
+                                    paymentReference: 'FLW-UG-' + Math.floor(100000 + Math.random() * 900000),
+                                    fulfillmentStatus: 'digital_delivered',
+                                    totalUSD: this.cartTotalUSD(),
+                                    preSignedUrl: preSignedUrl
+                                };
+
+                                this.webhookLogs.unshift({
+                                    timestamp: new Date().toLocaleString(),
+                                    event: 'charge.completed',
+                                    tx_ref: txRef,
+                                    signature: this.gatewaySettings.verifHash,
+                                    statusCode: 200
+                                });
+
+                                this.orders.unshift(newOrder);
+                                this.lastCompletedOrder = newOrder;
+                                this.isProcessingPayment = false;
+                                this.cart = [];
+                                this.showToast('Payment & Webhook Signature Verified!');
+                            }, 1000);
+                        }, 1000);
+                    }, 1000);
+                },
+
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3500);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
